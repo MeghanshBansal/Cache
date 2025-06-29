@@ -15,10 +15,10 @@ type Store struct {
 	mu        *sync.Mutex
 	limit     int // if limit is 0, limit logic will not be implemented
 	size      int
-	closeChan chan struct{}
+	CloseChan chan struct{}
 }
 
-func (s *Store) CreateStore(limit int, policy *EvictionPolicy.Policy) *Store {
+func CreateStore(limit int, policy *EvictionPolicy.Policy) *Store {
 	id := uuid.New().String()
 	store := Store{
 		Id:     id,
@@ -29,6 +29,27 @@ func (s *Store) CreateStore(limit int, policy *EvictionPolicy.Policy) *Store {
 		policy: *policy,
 	}
 	return &store
+}
+
+func (s *Store) Has(key string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	item, ok := s.data[key]
+	if !ok {
+		return false
+	}
+
+	if time.Now().After(item.createdAt.Add(item.ttl)) {
+		s.removeItem(key)
+	}
+
+	item.lastUsed = time.Now()
+	item.accessCnt++
+
+	if s.policy != nil {
+		s.policy.RecordAccess(item)
+	}
+	return ok
 }
 
 func (s *Store) Get(key string) (any, bool) {
@@ -110,7 +131,7 @@ func (s *Store) StartCleaner(dur time.Duration) {
 		select {
 		case <-ticker.C:
 			s.cleanBackground()
-		case <-s.closeChan:
+		case <-s.CloseChan:
 			return
 		}
 	}
