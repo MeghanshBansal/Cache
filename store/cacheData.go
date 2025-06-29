@@ -3,11 +3,15 @@ package store
 import "time"
 
 type CacheData struct {
-	Value   any
-	TTL     time.Duration
-	Created time.Time
+	key       string
+	value     any
+	ttl       time.Duration
+	createdAt time.Time
+	lastUsed  time.Time
+	accessCnt int
 }
 
-func (c *CacheData) HasExpired() bool {
-	return time.Now().Sub(c.Created) > c.TTL
-}
+func (c *CacheData) Key() string          { return c.key }
+func (c *CacheData) CreatedAt() time.Time { return c.createdAt }
+func (c *CacheData) LastUsed() time.Time  { return c.lastUsed }
+func (c *CacheData) AccessCnt() int       { return c.accessCnt }
