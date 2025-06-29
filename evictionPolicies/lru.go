@@ -7,25 +7,25 @@ type LRUPolicy struct {
 	items map[string]*list.Element
 }
 
-func NewLRUPolicy() *LRUPolicy {
-	return &LRUPolicy{
+func NewLRUPolicy() Policy {
+	return LRUPolicy{
 		list:  list.New(),
 		items: make(map[string]*list.Element),
 	}
 }
 
-func (l *LRUPolicy) RecordAccess(item EvictableItem) {
+func (l LRUPolicy) RecordAccess(item EvictableItem) {
 	if item, ok := l.items[item.Key()]; ok {
 		l.list.MoveToFront(item)
 	}
 }
 
-func (l *LRUPolicy) AddItem(item EvictableItem) {
+func (l LRUPolicy) AddItem(item EvictableItem) {
 	element := l.list.PushFront(item)
 	l.items[item.Key()] = element
 }
 
-func (l *LRUPolicy) RemoveItem(key string) {
+func (l LRUPolicy) RemoveItem(key string) {
 	if element, ok := l.items[key]; ok {
 		l.list.Remove(element)
 		delete(l.items, key)
@@ -42,6 +42,6 @@ func (l LRUPolicy) Evict() string {
 	return ""
 }
 
-func (l *LRUPolicy) Name() string {
+func (l LRUPolicy) Name() string {
 	return "LRU"
 }
